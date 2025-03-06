@@ -1,5 +1,8 @@
 # Riemann Sum Visualizer
 
+![imagen](https://github.com/user-attachments/assets/cb2259d9-681b-429c-b293-086bc18dfc05)
+
+
 This project is a C program that uses **SDL2** and **SDL_ttf** to visualize mathematical functions and compute Riemann sums (upper, lower, and middle).
 
 The application features:
