@@ -9,13 +9,34 @@ double f(double x) {
     return x*x;
 }
 
+void drawline(SDL_Surface* surface, int x0, int y0, int x1, int y1, Uint32 color){
+    int i;
+    double x = x1 - x0; 
+	double y = y1 - y0; 
+	double length = sqrt( x*x + y*y ); 
+	double addx = x / length; 
+	double addy = y / length; 
+	x = x0; 
+	y = y0; 
+	
+	for ( i = 0; i < length; i += 1) { 
+		SDL_Rect point = {x, y, 1, 1};
+        SDL_FillRect(surface, &point, color);
+		x += addx; 
+		y += addy; 
+		
+	} 
+}
+
 void drawfunction(SDL_Surface* surface, int width, int height, int startx, int starty, int scalingx, int scalingy) {
-    SDL_Rect yaxis = {startx, (height - starty-350), 1, 350};
-    SDL_Rect xaxis = {startx, height - starty, 450, 1};
+    int prevy = starty;
+    int prevx = startx;
+    SDL_Rect yaxis = {startx, (height - starty-350), 2, 350};
+    SDL_Rect xaxis = {startx, height - starty, 450, 2};
     Uint32 white = SDL_MapRGB(surface->format, 255, 255, 255);
     SDL_FillRect(surface, &yaxis, white);
     SDL_FillRect(surface, &xaxis, white);
-    for (int i = 0; i < 200; i++){
+    for (int i = 0; i <260; i++){
         //Displaced by startx
         int x = i*scalingx + startx;
         //Displaced by starty and inverted the Y axis so it increases upwards (Since I want the Y to be drawn from the bottom, I substract the height minus the function value and draw it from the top)
@@ -23,11 +44,15 @@ void drawfunction(SDL_Surface* surface, int width, int height, int startx, int s
         //(x, y, width, height)
         SDL_Rect rect = {x, y, 1, 1};
         SDL_FillRect(surface, &rect, white);
+        //Fill the gaps between the points
+        drawline(surface, prevx, prevy, x, y, white);
+        prevx = x;
+        prevy = y;
     }
 }
 
 void drawriemann(SDL_Surface* surface, int width, int height, int startx, int starty, int scalingx, int scalingy, double (*func)(double), double a, double b, int n) {
-    Uint32 white = SDL_MapRGB(surface->format, 255, 255, 255);
+    Uint32 lightblue = SDL_MapRGB(surface->format, 172, 216, 230);
     //SDL_Rect yaxis = {startx, (height - starty-350), 1, 350};
     for (int i = 0; i < n; i++){
         double dx = (b - a)/n;
@@ -42,7 +67,7 @@ void drawriemann(SDL_Surface* surface, int width, int height, int startx, int st
         //(x, y, width, height)
         if(x < b){
             SDL_Rect rect = {x+startx, y, dx, h/scalingy};
-            SDL_FillRect(surface, &rect, white);
+            SDL_FillRect(surface, &rect, lightblue);
         }
     }
 }
@@ -80,7 +105,7 @@ int main(int argc, char* argv[]) {
     char text[256];
     int a = 150;
     int b = 250;
-    int n = 20;
+    int n = 8;
 
     double highsum = highriemannsum(f, a, b, 100);
     double lowsum = lowriemannsum(f, a, b, 10000);
@@ -106,7 +131,7 @@ int main(int argc, char* argv[]) {
 
     //Scaling factor to draw a more visual function
     int scalingy = 200;
-    int scalingx = 2;
+    int scalingx = 1;
     // Draw the function
     drawfunction(surface, width, height, startx, starty, scalingx, scalingy);
     drawriemann(surface, width, height, startx, starty, scalingx, scalingy, f, a, b, n);
