@@ -28,45 +28,45 @@ void drawline(SDL_Surface* surface, int x0, int y0, int x1, int y1, Uint32 color
 	} 
 }
 
-void drawfunction(SDL_Surface* surface, int width, int height, int startx, int starty, int scalingx, int scalingy) {
+void drawfunction(SDL_Surface* surface, int width, int height, int startx, int starty, int scaling, int invscaling) {
     int prevy = starty;
     int prevx = startx;
-    SDL_Rect yaxis = {startx, (height - starty-350), 2, 350};
-    SDL_Rect xaxis = {startx, height - starty, 450, 2};
+    SDL_Rect yaxis = {startx, (height - starty-height/2), 2, height/2};
+    SDL_Rect xaxis = {startx, height - starty, width/2, 2};
     Uint32 white = SDL_MapRGB(surface->format, 255, 255, 255);
     SDL_FillRect(surface, &yaxis, white);
     SDL_FillRect(surface, &xaxis, white);
-    for (int i = 0; i <260; i++){
+    for (int i = 0; i < width/2; i++){
         //Displaced by startx
-        int x = i*scalingx + startx;
+        int x = i;
         //Displaced by starty and inverted the Y axis so it increases upwards (Since I want the Y to be drawn from the bottom, I substract the height minus the function value and draw it from the top)
-        int y = height - ((f(x-startx))/scalingy + starty);
+        int y = height - (scaling*(f(x))/invscaling + starty);
         //(x, y, width, height)
-        SDL_Rect rect = {x, y, 1, 1};
+        SDL_Rect rect = {x + startx, y, 1, 1};
         SDL_FillRect(surface, &rect, white);
         //Fill the gaps between the points
-        drawline(surface, prevx, prevy, x, y, white);
-        prevx = x;
+        drawline(surface, prevx, prevy, x + startx, y, white);
+        prevx = x + startx;
         prevy = y;
     }
 }
 
-void drawriemann(SDL_Surface* surface, int width, int height, int startx, int starty, int scalingx, int scalingy, double (*func)(double), double a, double b, int n) {
+void drawriemann(SDL_Surface* surface, int width, int height, int startx, int starty, int scaling, int invscaling, double (*func)(double), double a, double b, int n) {
     Uint32 lightblue = SDL_MapRGB(surface->format, 172, 216, 230);
     //SDL_Rect yaxis = {startx, (height - starty-350), 1, 350};
+    double dx = (b - a)/(double)n;
     for (int i = 0; i < n; i++){
-        double dx = (b - a)/n;
-        if(dx < 1){
-            dx = 1;
-        }
+        //if(dx < 1){
+        //    dx = 1;
+        //}
         //Displaced by startx
-        int x = a + i*dx + i*scalingx;
+        double x = a + i*dx;
         //Displaced by starty and inverted the Y axis so it increases upwards (Since I want the Y to be drawn from the bottom, I substract the height minus the function value and draw it from the top)
-        int h = func(x);
-        int y = height - (h/scalingy + starty);
+        double h = func(x);
+        double y = height - (scaling*h/invscaling + starty);
         //(x, y, width, height)
         if(x < b){
-            SDL_Rect rect = {x+startx, y, dx, h/scalingy};
+            SDL_Rect rect = {x+startx, y, dx, scaling*h/invscaling};
             SDL_FillRect(surface, &rect, lightblue);
         }
     }
@@ -100,12 +100,12 @@ double middleriemannsum(double (*func)(double), double a, double b, int n){
 }
 
 int main(int argc, char* argv[]) {
-    int width = 800;
-    int height = 600;
+    int width = 900;
+    int height = 700;
     char text[256];
-    int a = 150;
+    int a = 100;
     int b = 250;
-    int n = 8;
+    int n = 10;
 
     double highsum = highriemannsum(f, a, b, 100);
     double lowsum = lowriemannsum(f, a, b, 10000);
@@ -130,11 +130,19 @@ int main(int argc, char* argv[]) {
     int starty = height / 4;
 
     //Scaling factor to draw a more visual function
-    int scalingy = 200;
-    int scalingx = 1;
+
+    int invscaling = 1;
+    int scaling = 1;
+    if(f(width/2)>height/2){
+        invscaling = f(width/2) / (height/2);
+    }else if (f(width/2)<height/4)
+    {
+        scaling = 8;
+    }
+    
     // Draw the function
-    drawfunction(surface, width, height, startx, starty, scalingx, scalingy);
-    drawriemann(surface, width, height, startx, starty, scalingx, scalingy, f, a, b, n);
+    drawfunction(surface, width, height, startx, starty, scaling, invscaling);
+    drawriemann(surface, width, height, startx, starty, scaling, invscaling, f, a, b, n);
     // Render text
     SDL_Color textColor = {255, 255, 255, 255}; // White color
     sprintf(text, "Riemann Sum (%d, %d) - H:%f M:%f L:%f", a, b, highsum, middlesum, lowsum);
