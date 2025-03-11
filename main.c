@@ -51,20 +51,60 @@ void drawfunction(SDL_Surface* surface, int width, int height, int startx, int s
     }
 }
 
-void drawriemann(SDL_Surface* surface, int width, int height, int startx, int starty, int scaling, int invscaling, double (*func)(double), double a, double b, int n) {
+void drawlowriemann(SDL_Surface* surface, int width, int height, int startx, int starty, int scaling, int invscaling, double (*func)(double), double a, double b, int n) {
     Uint32 lightblue = SDL_MapRGB(surface->format, 172, 216, 230);
     //SDL_Rect yaxis = {startx, (height - starty-350), 1, 350};
-    double dx = (b - a)/(double)n;
+    double dx = round((b - a)/(double)n);
+    if(dx < 1){
+        dx = 1;
+    }
     for (int i = 0; i < n; i++){
-        //if(dx < 1){
-        //    dx = 1;
-        //}
         //Displaced by startx
         double x = a + i*dx;
         //Displaced by starty and inverted the Y axis so it increases upwards (Since I want the Y to be drawn from the bottom, I substract the height minus the function value and draw it from the top)
         double h = func(x);
-        double y = height - (scaling*h/invscaling + starty);
+        double y = ceil(height - (scaling*h/invscaling + starty));
         //(x, y, width, height)
+        if(x < b){
+            SDL_Rect rect = {x+startx, y, dx, scaling*h/invscaling};
+            SDL_FillRect(surface, &rect, lightblue);
+        }
+    }
+}
+
+void drawhighriemann(SDL_Surface* surface, int width, int height, int startx, int starty, int scaling, int invscaling, double (*func)(double), double a, double b, int n) {
+    Uint32 lightblue = SDL_MapRGB(surface->format, 172, 216, 230);
+    //SDL_Rect yaxis = {startx, (height - starty-350), 1, 350};
+    double dx = round((b - a)/(double)n);
+    if(dx < 1){
+        dx = 1;
+    }
+    for (int i = 0; i < n; i++){
+        //Displaced by startx
+        double x = a + i*dx;
+        //Displaced by starty and inverted the Y axis so it increases upwards (Since I want the Y to be drawn from the bottom, I substract the height minus the function value and draw it from the top)
+        double h = func(x+dx);
+        double y = ceil(height - (scaling*h/invscaling + starty));        //(x, y, width, height)
+        if(x < b){
+            SDL_Rect rect = {x+startx, y, dx, scaling*h/invscaling};
+            SDL_FillRect(surface, &rect, lightblue);
+        }
+    }
+}
+
+void drawmiddleriemann(SDL_Surface* surface, int width, int height, int startx, int starty, int scaling, int invscaling, double (*func)(double), double a, double b, int n) {
+    Uint32 lightblue = SDL_MapRGB(surface->format, 172, 216, 230);
+    //SDL_Rect yaxis = {startx, (height - starty-350), 1, 350};
+    double dx = round((b - a)/(double)n);
+    if(dx < 1){
+        dx = 1;
+    }
+    for (int i = 0; i < n; i++){
+        //Displaced by startx
+        double x = a + i*dx;
+        //Displaced by starty and inverted the Y axis so it increases upwards (Since I want the Y to be drawn from the bottom, I substract the height minus the function value and draw it from the top)
+        double h = func(x+dx*0.5);
+        double y = ceil(height - (scaling*h/invscaling + starty));        //(x, y, width, height)
         if(x < b){
             SDL_Rect rect = {x+startx, y, dx, scaling*h/invscaling};
             SDL_FillRect(surface, &rect, lightblue);
@@ -105,7 +145,7 @@ int main(int argc, char* argv[]) {
     char text[256];
     int a = 100;
     int b = 250;
-    int n = 10;
+    int n = 7;
 
     double highsum = highriemannsum(f, a, b, 100);
     double lowsum = lowriemannsum(f, a, b, 10000);
@@ -142,7 +182,7 @@ int main(int argc, char* argv[]) {
     
     // Draw the function
     drawfunction(surface, width, height, startx, starty, scaling, invscaling);
-    drawriemann(surface, width, height, startx, starty, scaling, invscaling, f, a, b, n);
+    drawmiddleriemann(surface, width, height, startx, starty, scaling, invscaling, f, a, b, n);
     // Render text
     SDL_Color textColor = {255, 255, 255, 255}; // White color
     sprintf(text, "Riemann Sum (%d, %d) - H:%f M:%f L:%f", a, b, highsum, middlesum, lowsum);
