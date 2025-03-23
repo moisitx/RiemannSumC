@@ -1,12 +1,46 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 #include <math.h>
+#include "tinyexpr.h"
 
+
+char input[256];
+
+void fstring() {
+    printf("Enter a function (example: x^2 + 3*x): ");
+    fgets(input, sizeof(input), stdin);
+    input[strcspn(input, "\n")] = 0;
+}
+
+int chooseriemann(){
+    char aux[256];
+    int choice;
+    printf("Choose what riemann sum you want to use\n");
+    printf("1. High riemann sum\n");
+    printf("2. Low riemann sum\n");
+    printf("3. Middle riemann sum\n");
+    printf("Enter a number from 1 to 3: ");
+    scanf("%d", &choice);
+    return choice;
+}
 
 
 double f(double x) {
-    return x*x;
+    te_variable vars[] = { {"x", &x} };
+    int err;
+    te_expr *compiledExpr = te_compile(input, vars, 1, &err);
+
+    if (compiledExpr) {
+        double result = te_eval(compiledExpr);
+        te_free(compiledExpr);
+        return result;
+    } else {
+        printf("Error parsing expression at position: %d\n", err);
+        return 0;
+    }
 }
 
 void drawline(SDL_Surface* surface, int x0, int y0, int x1, int y1, Uint32 color){
@@ -143,13 +177,12 @@ int main(int argc, char* argv[]) {
     int width = 900;
     int height = 700;
     char text[256];
+
     int a = 100;
     int b = 250;
     int n = 7;
 
-    double highsum = highriemannsum(f, a, b, 100);
-    double lowsum = lowriemannsum(f, a, b, 10000);
-    double middlesum = middleriemannsum(f, a, b, 100);
+    fstring();
 
     SDL_Init(SDL_INIT_VIDEO);
     if (TTF_Init() == -1) {
@@ -182,7 +215,27 @@ int main(int argc, char* argv[]) {
     
     // Draw the function
     drawfunction(surface, width, height, startx, starty, scaling, invscaling);
-    drawmiddleriemann(surface, width, height, startx, starty, scaling, invscaling, f, a, b, n);
+
+    switch (chooseriemann())
+    {
+    case 1:
+        drawhighriemann(surface, width, height, startx, starty, scaling, invscaling, f, a, b, n);
+        break;
+    case 2:
+        drawlowriemann(surface, width, height, startx, starty, scaling, invscaling, f, a, b, n);
+        break;
+    case 3:
+        drawmiddleriemann(surface, width, height, startx, starty, scaling, invscaling, f, a, b, n);
+        break;
+    default:
+        break;
+    }
+
+    
+    double highsum = highriemannsum(f, a, b, n);
+    double lowsum = lowriemannsum(f, a, b, n);
+    double middlesum = middleriemannsum(f, a, b, n);
+    
     // Render text
     SDL_Color textColor = {255, 255, 255, 255}; // White color
     sprintf(text, "Riemann Sum (%d, %d) - H:%f M:%f L:%f", a, b, highsum, middlesum, lowsum);
